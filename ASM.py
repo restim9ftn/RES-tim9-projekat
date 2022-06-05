@@ -10,7 +10,7 @@ from mysql.connector import Error
 ASMSocket = socket.socket()
 host = '127.0.0.1'
 port = 2000
-
+FORMAT = 'utf-8'
 
 try:
     connection = mysql.connector.connect(host='localhost',
@@ -22,13 +22,13 @@ try:
         print("KOnektovali ste se na MySQL Server verzija: ", db_Info)
         cursor = connection.cursor()
         cursor.execute("USE projekat;")
-        cursor.execute("INSERT INTO devices(id,value) VALUES(6,'andrija');")
+        cursor.execute("INSERT INTO devices(id,value) VALUES(7,'andrija');")
         connection.commit()
         record = cursor.fetchone()
         print("Uspesno ste se konektovali na bazu: ", record)
 
-except Error as e:
-    print("Greska prilikom konektovanja na bazu: ", e)
+except Error as err:
+    print("Greska prilikom konektovanja na bazu: ", err)
 
 
 
@@ -40,11 +40,11 @@ except socket.error as err:
 
 print("Server osluskuje i ceka poruke od klijenata....")
 ASMSocket.listen(5)
-def multi_threaded_client(connection):
+def multi_client(connection):
     connection.send(str.encode("Server radi"))
     while True:
         data = connection.recv(2048)
-        response = "Poruka: " + data.decode('utf-8')
+        response = "Poruka: " + data.decode(FORMAT)
         if  data==Empty:
             break
         print(response)
@@ -55,7 +55,7 @@ while True:
     print("Konektovan:\n")
     print(str(address[0]))
     print(str(address[1]))
-    start_new_thread(multi_threaded_client, (Client, ))
+    start_new_thread(multi_client, (Client, ))
     ThreadCounter += 1
     print("Redni broj Thread-a: " + str(ThreadCounter))
 
@@ -64,4 +64,4 @@ if connection.is_connected():
     connection.close()
     print("Konekcija sa bazom je prekinuta")
 
-ServerSideSocket.close()
+ASMSocket.close()

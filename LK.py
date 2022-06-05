@@ -5,7 +5,7 @@ import socket
 import os
 from _thread import *
 
-
+FORMAT = 'utf-8'
 
 ASMSocket = socket.socket() #AssetManagerSocket
 host = '127.0.0.1'
@@ -28,11 +28,11 @@ except socket.error as err:
 
 ThreadCounter = 0
 
-def multi_threaded_client(connection):
+def multi_client(connection):
     connection.send(str.encode("Kontroler radi.."))
     while True:
         data = connection.recv(2048)
-        response = "Poruka: " + data.decode('utf-8')
+        response = "Poruka: " + data.decode(FORMAT)
         if  data==Empty:
             break
         ASMSocket.send(data)
@@ -47,7 +47,7 @@ while True:
     print("Konektovan:\n")
     print(str(address[0]))
     print(str(address[1]))
-    start_new_thread(multi_threaded_client, (Client, ))
+    start_new_thread(multi_client, (Client, ))
     ThreadCounter += 1
     print("Redni broj Thread-a: " + str(ThreadCounter))
 
