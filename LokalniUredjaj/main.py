@@ -41,7 +41,27 @@ def JoinToSystem(localDevice):
     else:
         print("Vec postoji kao uredjaj u sistemu:",localDevice.toString())
     s.close()
-   
+
+def Start(localDevice,timeScale):
+    while(1):
+        oldVal = localDevice.getValue()
+        if(localDevice.getDeviceType()==DeviceType.Digital):
+            localDevice.setValue(randint(0,1))
+            localDevice.setTimeStamp(time.time())
+            if(oldVal!=localDevice.getValue()):
+                ReportStateChanges(localDevice)
+                print("Stara vrednost:",oldVal,"Nova vrednost:",localDevice.getValue(),"Timestamp:",localDevice.getTimeStamp())
+            else:
+                print("Nije doslo do promena","Stara vrednost:",oldVal,"Nova vrednost:",localDevice.getValue(),"Timestamp:",localDevice.getTimeStamp())             
+        else:
+            localDevice.setValue(randint(0,1000))
+            localDevice.setTimeStamp(time.time())
+            if(oldVal!=localDevice.getValue()):
+                ReportStateChanges(localDevice)
+                print("Stara vrednost:",oldVal,"Nova vrednost:",localDevice.getValue(),"Timestamp:",localDevice.getTimeStamp())
+            else:
+                print("Nije doslo do promena","Stara vrednost:",oldVal,"Nova vrednost:",localDevice.getValue(),"Timestamp:",localDevice.getTimeStamp())             
+        sleep(randint(1,5)*timeScale)
 
 def LoadTimeScale():
 
@@ -57,4 +77,4 @@ if __name__ == '__main__':
     scaleTime=LoadTimeScale()
     localDevice = LocalDevice(DeviceType.Digital,0,time.time())
     JoinToSystem(localDevice)
-    #Start(localDevice,scaleTime) #time scale treba uvesti iz xml
+    Start(localDevice,scaleTime) #time scale treba uvesti iz xml
