@@ -149,7 +149,9 @@ def PassStateChangesToAMS():
 def LoadTime():
     with open('./time_config.xml') as fd:
         doc = xmltodict.parse(fd.read())
+        print("nesto")
     return doc['timescale']['value']
+
 
 
 def LoadDevices():
