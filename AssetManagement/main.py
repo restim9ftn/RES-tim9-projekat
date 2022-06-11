@@ -59,6 +59,28 @@ while True:
     ThreadCounter += 1
     print("Redni broj Thread-a: " + str(ThreadCounter))
 
+def Menu(nizuredjaja,tipuredjaja):
+    print("1. Upali uredjaj")
+    print("2. Ugasi uredjaj")
+    print("3. Ugasi program")
+    option1 = int(input("Unesi komandu: "))
+    option2=0
+    option3=0
+    if(option1==1):
+        print("Koji uredjaj zelite da upalite?")
+        for i in range(0,tipuredjaja.count):
+            print(i+". "+tipuredjaja[i])
+        option2 = int(input("Unesi komandu: "))
+    elif(option1==2):
+        for i in range(0,nizuredjaja.count):
+            print(i+". "+nizuredjaja[i].toString())
+        option2 = int(input("Unesi komandu: "))
+    elif(option1==3):
+        for i in range(0,nizuredjaja.count):
+            print("Gasenje")
+    else:
+        print("Pogresna komanda!")
+
 if connection.is_connected():
     cursor.close()
     connection.close()
