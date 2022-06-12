@@ -1,63 +1,8 @@
-from dataclasses import dataclass
-from queue import Empty
 import socket
-import mysql.connector
-import os
-from _thread import *
-from mysql.connector import Error
-
-
-ASMSocket = socket.socket()
-host = '127.0.0.1'
-port = 2000
-FORMAT = 'utf-8'
-
-try:
-    connection = mysql.connector.connect(host='localhost',
-                                         user='root',
-                                         database= 'projekat',
-                                         password='andrija')
-    if connection.is_connected():
-        db_Info = connection.get_server_info()
-        print("KOnektovali ste se na MySQL Server verzija: ", db_Info)
-        cursor = connection.cursor()
-        cursor.execute("USE projekat;")
-        cursor.execute("INSERT INTO devices(id,value) VALUES(7,'andrija');")
-        connection.commit()
-        record = cursor.fetchone()
-        print("Uspesno ste se konektovali na bazu: ", record)
-
-except Error as err:
-    print("Greska prilikom konektovanja na bazu: ", err)
-
-
-
-ThreadCounter = 0 
-try:
-    ASMSocket.bind((host, port)) 
-except socket.error as err:
-    print(err)
-
-print("Server osluskuje i ceka poruke od klijenata....")
-ASMSocket.listen(5)
-def multi_client(connection):
-    connection.send(str.encode("Server radi"))
-    while True:
-        data = connection.recv(2048)
-        response = "Poruka: " + data.decode(FORMAT)
-        if  data==Empty:
-            break
-        print(response)
-        connection.sendall(str.encode(response))
-    connection.close()
-while True:
-    Client, address = ASMSocket.accept()
-    print("Konektovan:\n")
-    print(str(address[0]))
-    print(str(address[1]))
-    start_new_thread(multi_client, (Client, ))
-    ThreadCounter += 1
-    print("Redni broj Thread-a: " + str(ThreadCounter))
+import pickle
+import subprocess
+import time
+from hashlib import sha256
 
 def Menu(nizuredjaja,tipuredjaja):
     print("1. Upali uredjaj")
@@ -68,22 +13,41 @@ def Menu(nizuredjaja,tipuredjaja):
     option3=0
     if(option1==1):
         print("Koji uredjaj zelite da upalite?")
-        for i in range(0,tipuredjaja.count):
-            print(i+". "+tipuredjaja[i])
+        for i in range(0,len(tipuredjaja)):
+            print(str(i)+". "+str(tipuredjaja[i]))
         option2 = int(input("Unesi komandu: "))
+        if(option2==0):
+            tip='Digital'
+        elif(option2==1):
+            tip='Analog'
+        val=int(input('Unesite vrednost:'))
+        timestamp=time.time()
+        hash=sha256((input("Unesite naziv").encode())).hexdigest()
+        subprocess.call(f'start /wait python LokalniUredjaj/main.py {tip} {val} {timestamp} {hash}', shell=True)
+    
     elif(option1==2):
         for i in range(0,nizuredjaja.count):
             print(i+". "+nizuredjaja[i].toString())
         option2 = int(input("Unesi komandu: "))
+        TCP_IP = '127.0.0.1'
+        TCP_PORT = 5555
+        MESSAGE = pickle.dumps('ugasi')
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((TCP_IP, TCP_PORT))
+        s.send(MESSAGE)
+        s.close()
+        
     elif(option1==3):
         for i in range(0,nizuredjaja.count):
             print("Gasenje")
+            return False
     else:
         print("Pogresna komanda!")
+    return True
 
-if connection.is_connected():
-    cursor.close()
-    connection.close()
-    print("Konekcija sa bazom je prekinuta")
-
-ASMSocket.close()
+if __name__=="__main__":
+    tipuredjaja =["digital","analog"]
+    nizuredjaja=[]
+    subprocess.call(f'start /wait python LokalniKontroler/main.py', shell=True)
+    while(Menu(nizuredjaja,tipuredjaja)):
+        print("Working...")
