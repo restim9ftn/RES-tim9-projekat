@@ -14,65 +14,59 @@ import time
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 
-receivequeue=Queue()
+receivequeue=[]
 devices=[]
 
 
 def WriteDeviceToXml():
-    devices.append(LocalDevice.LocalDevice(LocalDevice.DeviceType.Digital,0,0,"dfg","sdf"))
-    devices.append(LocalDevice.LocalDevice(LocalDevice.DeviceType.Digital,0,0,"hhh","hhh"))
-    #d=LocalDevice.LocalDevice(LocalDevice.DeviceType.Digital,0,0,"","")
-    
     data = ET.Element('devices')
     for d in devices:
         items = ET.SubElement(data, 'device')
-        item1 = ET.SubElement(items, 'name')
         item2 = ET.SubElement(items, 'hash')
         item3 = ET.SubElement(items, 'deviceType')
         item4 = ET.SubElement(items, 'timStamp')
         item5 = ET.SubElement(items, 'value')
-        item1.text = str(d.getName())
         item2.text = str(d.getHash())
         item3.text=str(d.getTypeString())
         item4.text=str(d.getTimeStamp())
         item5.text=str(d.getValue())
     ####
-    # create the file structure
-   
-    
-
-    # create a new XML file with the results
     mydata = ET.tostring(data)
+    print("mydata",mydata)
+    print("str(mydata)",str(mydata))
+    #sklanjanje b' na pocetku i ' na kraju stringa
+    mydata2 =str(mydata) 
+    mydata2 = mydata2[2:len(mydata2)-1]
+    print("mydata2",mydata2)
     myfile = open("devices.xml", "w")
-    myfile.write(str(mydata))
+    myfile.write(mydata2)
     return
+
 def ReadDevicesFromXml():
-    # parse an xml file by name
+    global devices
     mydoc = minidom.parse('devices.xml')
-
-    devices = mydoc.getElementsByTagName('device')
-    for d in devices:
+    devs = mydoc.getElementsByTagName('device')
+    idx=0
+    for i in range(0,len(devs)):
+        devices.append(LocalDevice(0,"",0,""))
+    for d in devs:
+        br=0
         for c in d.childNodes:
-            print(c.firstChild.data)
-    # one specific item attribute
-    # print('Item #2 attribute:')
-    # print(items[1].attributes['name'].value)
-
-    # # all item attributes
-    # print('\nAll attributes:')
-    # for elem in items:
-    #     print(elem.attributes['name'].value)
-
-    # # one specific item's data
-    # print('\nItem #2 data:')
-    # print(items[1].firstChild.data)
-    # print(items[1].childNodes[0].data)
-
-    # # all items data
-    # print('\nAll item data:')
-    # for elem in items:
-    #     print(elem.firstChild.data)
+            #print(c.firstChild.data)
+            if(br==0):
+                devices[idx].setHash(c.firstChild.data)
+            elif(br==1):
+                devices[idx].setDeviceType(c.firstChild.data)
+            elif(br==2):
+                devices[idx].setTimeStamp(c.firstChild.data)
+            else:
+                devices[idx].setValue(c.firstChild.data)
+            br+=1
+        idx+=1
+    for i in range(0,len(devices)):
+        print(devices[i].toString())
     return
+
 def AddDevice(device):
     global devices
     ind=False
@@ -80,10 +74,11 @@ def AddDevice(device):
         if(devices[i].getHash()==device.getHash()):
             ind=True
     if(ind):
-        return
+        return False
     else:
-        WriteDeviceToXml(device)
         devices.append(device)
+        WriteDeviceToXml(device)
+        return True
 
 def RegisterDevice():
     HOST=''
@@ -106,8 +101,10 @@ def RegisterDevice():
                     data = s.recv(8192)
                     if data:
                         device=pickle.loads(data)
-                        AddDevice(device)
-                        s.send('ok'.encode()) 
+                        if(AddDevice(device)):
+                            s.send('ok'.encode())
+                        else:
+                            s.send('Device vec registrovan.'.encode())
                     else:
                         read_list.remove(s)
         except:
@@ -134,7 +131,8 @@ def ReceiveStateChanges():
                 if data:
                     update=pickle.loads(data)
                     update.toString()
-                    receivequeue.put(update)
+                    receivequeue.append(update)
+                    SaveStateChanges()
                     s.send('ok'.encode())    
                 else:
                     s.close()
