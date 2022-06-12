@@ -11,6 +11,10 @@ from random import randint
 from time import sleep
 from dicttoxml import dicttoxml
 import xmltodict
+import select
+import sys
+terminate=False
+
 
 def ReportStateChanges(localDevice): #menjanje stanja
     TCP_IP = '127.0.0.1'
@@ -39,11 +43,39 @@ def JoinToSystem(localDevice):
     if(response.decode()=='ok'):
         print("Uspesno prikljucenje kao novi uredjaj:",localDevice.toString())
     else:
-        print("Vec postoji kao uredjaj u sistemu:",localDevice.toString())
+        print(response.decode(),localDevice.toString())
     s.close()
 
+def TurnOff():
+    HOST=''
+    PORT=5555
+    ss=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    ss.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    ss.bind((HOST,PORT))
+    ss.listen(5)
+    print ("Listening on port 5555 for new device registrations.")
+    read_list = [ss]
+    while True:
+        try:
+            readable, writable, errored = select.select(read_list, [], [])
+            for s in readable:
+                if s is ss:
+                    client_socket, address = ss.accept()
+                    read_list.append(client_socket)
+                    print( "Connection from", address)
+                else:
+                    data = s.recv(8192)
+                    if data:
+                        command=pickle.loads(data)
+                        if(command=='ugasi'):
+                            terminate=True
+                    else:
+                        read_list.remove(s)
+        except:
+            print(readable)
+
 def Start(localDevice,timeScale):
-    while(1):
+    while(terminate == False):
         oldVal = localDevice.getValue()
         if(localDevice.getDeviceType()==DeviceType.Digital):
             localDevice.setValue(randint(0,1))
@@ -61,10 +93,9 @@ def Start(localDevice,timeScale):
                 print("Stara vrednost:",oldVal,"Nova vrednost:",localDevice.getValue(),"Timestamp:",localDevice.getTimeStamp())
             else:
                 print("Nije doslo do promena","Stara vrednost:",oldVal,"Nova vrednost:",localDevice.getValue(),"Timestamp:",localDevice.getTimeStamp())             
-        sleep(randint(1,5)*timeScale)
+        sleep(randint(90,100)*timeScale)
 
 def LoadTimeScale():
-
     with open('./time_config.xml') as fd:
         doc = xmltodict.parse(fd.read())
     return doc['timescale']['value']
@@ -74,7 +105,14 @@ if __name__ == '__main__':
     #ovde pokupimo patrametre iz aplikacije koja startuje
     #users = sys.argv[2:len(sys.argv)]
     #username=users[int(sys.argv[1])]
+    input(sys.argv)
+    dev_type = sys.argv[1]
+    dev_value = sys.argv[2]
+    dev_timestamp = sys.argv[3]
+    dev_hash = sys.argv[4]
     scaleTime=LoadTimeScale()
-    localDevice = LocalDevice(DeviceType.Digital,0,time.time())
-    JoinToSystem(localDevice)
-    Start(localDevice,scaleTime) #time scale treba uvesti iz xml
+    localDevice = LocalDevice(0,dev_hash,dev_type,dev_value,dev_timestamp)
+    print(localDevice.toString())
+    input()
+    #JoinToSystem(localDevice)
+    #Start(localDevice,scaleTime) #time scale treba uvesti iz xml

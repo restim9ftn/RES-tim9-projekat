@@ -7,20 +7,16 @@ class DeviceType(Enum):
     
 
 class LocalDevice:
-    name=""
     hash=""
     deviceType = DeviceType.Digital
     value=0
     timeStamp=0
-    def __init__(self,type,value,timeStamp):
+    def __init__(self,type,value,timeStamp,hash):
         self.deviceType=type
+        self.hash=hash
         self.value=value
         self.timeStamp=timeStamp
 
-    def getName(self):
-        return self.name
-    def setName(self,name):
-        self.name=name
         
     def getHash(self):
         return hash
