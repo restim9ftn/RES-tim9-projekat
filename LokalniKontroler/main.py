@@ -1,5 +1,6 @@
 from multiprocessing import Queue
 import pickle
+from random import randint
 from re import S
 import select
 import socket
@@ -7,7 +8,9 @@ from threading import Thread
 from dicttoxml import dicttoxml
 import xmltodict
 from xml.dom.minidom import parseString
-import LocalDevice
+from LocalDevice import LocalDevice
+from LocalDevice import DeviceType
+import time
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 
@@ -137,13 +140,83 @@ def ReceiveStateChanges():
                     s.close()
 
 def SaveStateChanges():
-    global receivequeue
-    while(True):
-        changes = receivequeue.get()
-        
-
+    data = ET.Element('receivedchanges')
+    for d in receivequeue:
+        items = ET.SubElement(data, 'device')
+        item1 = ET.SubElement(items, 'name')
+        item2 = ET.SubElement(items, 'hash')
+        item3 = ET.SubElement(items, 'deviceType')
+        item4 = ET.SubElement(items, 'timStamp')
+        item5 = ET.SubElement(items, 'value')
+        item1.text = str(d.getName())
+        item2.text = str(d.getHash())
+        item3.text=str(d.getTypeString())
+        item4.text=str(d.getTimeStamp())
+        item5.text=str(d.getValue())
     
-def PassStateChangesToAMS():
+    mydata = ET.tostring(data)
+    print("mydata",mydata)
+    print("str(mydata)",str(mydata))
+    #sklanjanje b' na pocetku i ' na kraju stringa
+    mydata2 =str(mydata) 
+    mydata2 = mydata2[2:len(mydata2)-1]
+    print("mydata2",mydata2)
+    myfile = open("receivedchanges.xml", "w")
+    myfile.write(mydata2)
+    return
+        
+def ReadStateChanges():
+    mydoc = minidom.parse('receivedchanges.xml')
+    devs = mydoc.getElementsByTagName('device')
+    idx=0
+    for i in range(0,len(devs)):
+        receivequeue.append(LocalDevice("","","","",""))
+    for d in devs:
+        br=0
+        for c in d.childNodes:
+            #print(c.firstChild.data)
+            if(br==0):
+                #print(c.firstChild.data)
+                devices[idx].setName(c.firstChild.data)
+            elif(br==1):
+                devices[idx].setHash(c.firstChild.data)
+            elif(br==2):
+                devices[idx].setDeviceType(c.firstChild.data)
+            elif(br==3):
+                devices[idx].setValue(c.firstChild.data)
+            else:
+                devices[idx].setTimeStamp(c.firstChild.data)
+            br+=1
+        idx+=1
+    for i in range(0,len(devices)):
+        print(devices[i].toString())
+    return
+
+def ClearReceivedChanges():
+    myfile = open("receivedchanges.xml", "w")
+    myfile.write("")
+
+def PassStateChangesToAMS(timeScale):
+    while(1):
+        time.sleep(60*5*timeScale)
+        TCP_IP = '127.0.0.1'
+        TCP_PORT = 5017
+        MESSAGE = pickle.dumps(receivequeue)
+        #trebalo bi ovdje
+        receivequeue.clear()
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((TCP_IP, TCP_PORT))
+        s.send(MESSAGE)
+        response=s.recv(1024)
+        print(response.decode())
+        if(response.decode()=='ok'):
+            print("Uspjesno poslati podaci ka AMS")
+            ClearReceivedChanges()
+        else:
+            print("Neuspjesno slanje ka AMS")
+            ReadStateChanges()
+        s.close()
+
     return
 
 def LoadTime():
@@ -152,20 +225,19 @@ def LoadTime():
     return doc['timescale']['value']
 
 
-def LoadDevices():
-    global devices
-    #ucitati ih iz xml
+
 
 if __name__=="__main__":
-    # LoadDevices()
-    # recieveProcess=Thread(target=ReceiveStateChanges,args=())
-    # sendProces=Thread(target=SaveStateChanges,args=())
-    # saveProcess=Thread(target=PassStateChangesToAMS,args=())
-    # registerProcess = Thread(target=RegisterDevice,args=())
-    # recieveProcess.Start()
-    # sendProces.Start()
-    # saveProcess.Start()
-    # registerProcess.Start()
-    #WriteDeviceToXml()
+    input('started')
+    timeScale=float(LoadTime())
     ReadDevicesFromXml()
+    recieveProcess=Thread(target=ReceiveStateChanges,args=())
+    sendProces=Thread(target=SaveStateChanges,args=())
+    saveProcess=Thread(target=PassStateChangesToAMS,args=[timeScale])
+    registerProcess = Thread(target=RegisterDevice,args=())
+    recieveProcess.start()
+    sendProces.start()
+    saveProcess.start()
+    registerProcess.start()
+    WriteDeviceToXml()
     input("Program working...")
