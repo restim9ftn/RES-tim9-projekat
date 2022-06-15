@@ -22,14 +22,19 @@ def ReportStateChanges(localDevice): #menjanje stanja
     MESSAGE = pickle.dumps(localDevice)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((TCP_IP, TCP_PORT))
+    
     s.send(MESSAGE)
-    response=s.recv(1024)
-    print(response.decode())
-    if(response.decode()=='ok'):
-        print("Uspesno javljeno o promenama uredjaja:",localDevice.toString())
-    else:
-        print("Neuspesno javljeno o promenama uredjaja:",localDevice.toString())
-    s.close()
+    # try:
+    #    response=s.recv(1024)
+    # except Exception as e:
+    #     print("exception")
+    #     input(e)
+    # print(response.decode())
+    #if(response.decode()=='ok'):
+    #    print("Uspesno javljeno o promenama uredjaja:",localDevice.toString())
+    #else:
+    #    print("Neuspesno javljeno o promenama uredjaja:",localDevice.toString())
+    #s.close()
 
 def JoinToSystem(localDevice):
     TCP_IP = '127.0.0.1'
@@ -38,6 +43,8 @@ def JoinToSystem(localDevice):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((TCP_IP, TCP_PORT))
     s.send(MESSAGE)
+    print("Send message reg: ",MESSAGE)
+
     response=s.recv(1024)
     print(response.decode())
     if(response.decode()=='ok'):
@@ -76,12 +83,17 @@ def TurnOff():
 
 def Start(localDevice,timeScale):
     while(terminate == False):
+        print('SENDING TO LOCAL CONTROLLER')
+        try:
+            sleep(randint(90,100)*timeScale)
+        except Exception as e:
+            input(e)
         oldVal = localDevice.getValue()
         if(localDevice.getDeviceType()==DeviceType.Digital):
             localDevice.setValue(randint(0,1))
             localDevice.setTimeStamp(time.time())
             if(oldVal!=localDevice.getValue()):
-                ReportStateChanges(localDevice)
+                ReportStateChanges(localDevice,5015)
                 print("Stara vrednost:",oldVal,"Nova vrednost:",localDevice.getValue(),"Timestamp:",localDevice.getTimeStamp())
             else:
                 print("Nije doslo do promena","Stara vrednost:",oldVal,"Nova vrednost:",localDevice.getValue(),"Timestamp:",localDevice.getTimeStamp())             
@@ -89,11 +101,38 @@ def Start(localDevice,timeScale):
             localDevice.setValue(randint(0,1000))
             localDevice.setTimeStamp(time.time())
             if(oldVal!=localDevice.getValue()):
-                ReportStateChanges(localDevice)
+                ReportStateChanges(localDevice,5015)
                 print("Stara vrednost:",oldVal,"Nova vrednost:",localDevice.getValue(),"Timestamp:",localDevice.getTimeStamp())
             else:
                 print("Nije doslo do promena","Stara vrednost:",oldVal,"Nova vrednost:",localDevice.getValue(),"Timestamp:",localDevice.getTimeStamp())             
-        sleep(randint(90,100)*timeScale)
+
+def ToAmsDirect(localDevice,timeScale):
+    while(terminate==False):
+        print("SENDING TO AMS")
+        try:
+            sleep(randint(90,100)*timeScale)
+        except Exception as e:
+            input(e)
+        oldVal = localDevice.getValue()
+        if(localDevice.getDeviceType()==DeviceType.Digital):
+            localDevice.setValue(randint(0,1))
+            localDevice.setTimeStamp(time.time())
+            if(oldVal!=localDevice.getValue()):
+                devices=[localDevice]
+                ReportStateChanges(devices,5017)
+                print("Stara vrednost:",oldVal,"Nova vrednost:",localDevice.getValue(),"Timestamp:",localDevice.getTimeStamp())
+            else:
+                print("Nije doslo do promena","Stara vrednost:",oldVal,"Nova vrednost:",localDevice.getValue(),"Timestamp:",localDevice.getTimeStamp())             
+        else:
+            localDevice.setValue(randint(0,1000))
+            localDevice.setTimeStamp(time.time())
+            if(oldVal!=localDevice.getValue()):
+                devices=[localDevice]
+                ReportStateChanges(devices,5017)
+                print("Stara vrednost:",oldVal,"Nova vrednost:",localDevice.getValue(),"Timestamp:",localDevice.getTimeStamp())
+            else:
+                print("Nije doslo do promena","Stara vrednost:",oldVal,"Nova vrednost:",localDevice.getValue(),"Timestamp:",localDevice.getTimeStamp())             
+               
 
 def LoadTimeScale():
     with open('./time_config.xml') as fd:
@@ -105,14 +144,17 @@ if __name__ == '__main__':
     #ovde pokupimo patrametre iz aplikacije koja startuje
     #users = sys.argv[2:len(sys.argv)]
     #username=users[int(sys.argv[1])]
-    input(sys.argv)
+    #localDevice = LocalDevice(DeviceType(int('0')),int('1'),float('1.345'),'wsedrftghasdfg')
     dev_type = sys.argv[1]
     dev_value = sys.argv[2]
     dev_timestamp = sys.argv[3]
     dev_hash = sys.argv[4]
-    scaleTime=LoadTimeScale()
-    localDevice = LocalDevice(0,dev_hash,dev_type,dev_value,dev_timestamp)
+    mode=sys.argv[5]
+    scaleTime=float(LoadTimeScale())
+    localDevice = LocalDevice(DeviceType(int(dev_type)),int(dev_value),float(dev_timestamp),dev_hash)
     print(localDevice.toString())
-    input()
-    #JoinToSystem(localDevice)
-    #Start(localDevice,scaleTime) #time scale treba uvesti iz xml
+    if mode == 'ams':
+        ToAmsDirect(localDevice, scaleTime)
+    else:
+        JoinToSystem(localDevice)
+        Start(localDevice,scaleTime) #time scale treba uvesti iz xml

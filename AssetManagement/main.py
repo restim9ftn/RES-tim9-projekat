@@ -1,4 +1,3 @@
-
 from multiprocessing import Queue
 import pickle
 import select
@@ -7,7 +6,7 @@ import threading
 
 receivequeue=Queue()
 
-#region prihvatanje apdejta deviceova
+
 def ListenForMainControlerNotifications():
     HOST=''
     PORT=5017
@@ -37,14 +36,14 @@ def ListenForMainControlerNotifications():
                         read_list.remove(s)
         except:
             print(readable)
-#endregion
-#region menu
+
+
 def Menu():
     while(True):
         print("1. Napravi izvestaj.")
         print("2. Broj radnih sati za uredjaj.")
     return
-#endregion
+
 
 if __name__ == "__main__":
     recieveProcess=threading(target=ListenForMainControlerNotifications,args=())
