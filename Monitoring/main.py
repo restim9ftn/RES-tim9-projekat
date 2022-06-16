@@ -3,8 +3,11 @@ import pickle
 import subprocess
 import time
 from hashlib import sha256
+from random import randint
+from time import sleep
 
 def Menu(nizuredjaja,tipuredjaja):
+   
     print("1. Upali uredjaj")
     print("2. Ugasi uredjaj")
     print("3. Ugasi program")
@@ -17,13 +20,16 @@ def Menu(nizuredjaja,tipuredjaja):
             print(str(i)+". "+str(tipuredjaja[i]))
         option2 = int(input("Unesi komandu: "))
         if(option2==0):
-            tip='Digital'
+            tip='0'
         elif(option2==1):
-            tip='Analog'
+            tip='1'
         val=int(input('Unesite vrednost:'))
         timestamp=time.time()
         hash=sha256((input("Unesite naziv").encode())).hexdigest()
-        subprocess.call(f'start /wait python LokalniUredjaj/main.py {tip} {val} {timestamp} {hash}', shell=True)
+        mode=input("Unesite 'ams' ako zelite da direktno saljete ams procesu, ili controller ako zelite kontroleru. ")
+        if mode!='ams':
+            subprocess.call(f'start python LokalniKontroler/main.py', shell=True)
+        subprocess.call(f'start python LokalniUredjaj/main.py {tip} {val} {timestamp} {hash} {mode}', shell=True)
     
     elif(option1==2):
         for i in range(0,nizuredjaja.count):
@@ -48,6 +54,6 @@ def Menu(nizuredjaja,tipuredjaja):
 if __name__=="__main__":
     tipuredjaja =["digital","analog"]
     nizuredjaja=[]
-    subprocess.call(f'start /wait python LokalniKontroler/main.py', shell=True)
+    subprocess.call(f'start python AMS/main.py', shell=True)
     while(Menu(nizuredjaja,tipuredjaja)):
         print("Working...")

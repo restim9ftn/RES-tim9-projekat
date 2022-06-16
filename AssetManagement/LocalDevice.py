@@ -13,9 +13,10 @@ class LocalDevice:
     timeStamp=0
     def __init__(self,type,value,timeStamp,hash):
         self.deviceType=type
-        self.hash=hash
         self.value=value
         self.timeStamp=timeStamp
+        self.hash=hash
+
 
         
     def getHash(self):
