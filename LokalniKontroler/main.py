@@ -20,8 +20,11 @@ devices=[]
 timeScale=0.0
 
 def WriteDeviceToXml():
+    global devices
     data = ET.Element('devices')
+    #print('dev len:',len(devices))
     for d in devices:
+        #print(f"d: {0}",d.toString())
         items = ET.SubElement(data, 'device')
         item2 = ET.SubElement(items, 'hash')
         item3 = ET.SubElement(items, 'deviceType')
@@ -33,12 +36,12 @@ def WriteDeviceToXml():
         item5.text=str(d.getValue())
     ####
     mydata = ET.tostring(data)
-    print("mydata",mydata)
-    print("str(mydata)",str(mydata))
+    #print("mydata",mydata)
+    #print("str(mydata)",str(mydata))
     #sklanjanje b' na pocetku i ' na kraju stringa
     mydata2 =str(mydata) 
     mydata2 = mydata2[2:len(mydata2)-1]
-    print("mydata2",mydata2)
+    #print("mydata2",mydata2)
     myfile = open("devices.xml", "w")
     myfile.write(mydata2)
     return
@@ -49,7 +52,7 @@ def ReadDevicesFromXml():
     devs = mydoc.getElementsByTagName('device')
     idx=0
     for i in range(0,len(devs)):
-        devices.append(LocalDevice(0,"",0,""))
+        devices.append(LocalDevice(DeviceType.Digital,0,0,""))
     for d in devs:
         br=0
         for c in d.childNodes:
@@ -64,21 +67,24 @@ def ReadDevicesFromXml():
                 devices[idx].setValue(c.firstChild.data)
             br+=1
         idx+=1
-    for i in range(0,len(devices)):
-        print(devices[i].toString())
+    #for i in range(0,len(devices)):
+    #print('U funkciji ReadDevicesFromXml citanje ranije reg. devices',devices[i].toString())
     return
 
 def AddDevice(device):
     global devices
     ind=False
-    for i in range(0,devices.count()):
+    #print('dev count:',len(devices))
+    for i in range(0,len(devices)):
         if(devices[i].getHash()==device.getHash()):
+            #print("postoji device3 vec")
             ind=True
     if(ind):
         return False
     else:
         devices.append(device)
-        WriteDeviceToXml(device)
+        print("Dodao novi uredjaj: ",device.getHash())
+        WriteDeviceToXml()
         return True
 
 def RegisterDevice():
@@ -97,16 +103,18 @@ def RegisterDevice():
                 if s is ss:
                     client_socket, address = ss.accept()
                     read_list.append(client_socket)
-                    print( "Connection from", address)
+                    print( "Register connection from", address)
                 else:
-                    data = s.recv(8192)
+                    data = s.recv(1024)
                     if data:
                         device=pickle.loads(data)
+                        print("Novi uredjaj",device.toString())
                         if(AddDevice(device)):
                             s.send('ok'.encode())
                         else:
                             s.send('Device vec registrovan.'.encode())
                     else:
+                        s.close()
                         read_list.remove(s)
         except:
             print(readable)
@@ -131,12 +139,16 @@ def ReceiveStateChanges():
                 data = s.recv(1024)
                 if data:
                     update=pickle.loads(data)
-                    update.toString()
+                    print(f'Update:',update.getHash(),type(update))
                     receivequeue.append(update)
-                    SaveStateChanges()
+                    print("ok")
+                    # if(SaveStateChanges()):
+                    #     print('ok')
+                    print("ok")
                     s.send('ok'.encode())    
                 else:
                     s.close()
+                    read_list.remove(s)
 
 def SaveStateChanges():
     print('usao u save')
