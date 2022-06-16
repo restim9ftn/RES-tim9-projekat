@@ -44,4 +44,4 @@ class LocalDevice:
         else:   
             return "ANALOG"
     def toString(self):
-        return f"Tip uredjaja: {self.getTypeString()}, Vrednost: {self.getValue()}, Poslednja izmena: {self.getTimeStamp()}"
+        return f"Hash: {self.getHash()} Tip uredjaja: {self.getTypeString()}, Vrednost: {self.getValue()}, Poslednja izmena: {self.getTimeStamp()}"
