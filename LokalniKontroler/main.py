@@ -13,10 +13,11 @@ from LocalDevice import DeviceType
 import time
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
+from time import sleep
 
 receivequeue=[]
 devices=[]
-
+timeScale=0.0
 
 def WriteDeviceToXml():
     data = ET.Element('devices')
@@ -138,15 +139,15 @@ def ReceiveStateChanges():
                     s.close()
 
 def SaveStateChanges():
+    print('usao u save')
     data = ET.Element('receivedchanges')
+    input("received val")
     for d in receivequeue:
         items = ET.SubElement(data, 'device')
-        item1 = ET.SubElement(items, 'name')
         item2 = ET.SubElement(items, 'hash')
         item3 = ET.SubElement(items, 'deviceType')
         item4 = ET.SubElement(items, 'timStamp')
         item5 = ET.SubElement(items, 'value')
-        item1.text = str(d.getName())
         item2.text = str(d.getHash())
         item3.text=str(d.getTypeString())
         item4.text=str(d.getTimeStamp())
@@ -161,6 +162,7 @@ def SaveStateChanges():
     print("mydata2",mydata2)
     myfile = open("receivedchanges.xml", "w")
     myfile.write(mydata2)
+    input("uspeo")
     return
         
 def ReadStateChanges():
@@ -168,19 +170,16 @@ def ReadStateChanges():
     devs = mydoc.getElementsByTagName('device')
     idx=0
     for i in range(0,len(devs)):
-        receivequeue.append(LocalDevice("","","","",""))
+        receivequeue.append(LocalDevice(DeviceType.Digital,0,0,""))
     for d in devs:
         br=0
         for c in d.childNodes:
             #print(c.firstChild.data)
             if(br==0):
-                #print(c.firstChild.data)
-                devices[idx].setName(c.firstChild.data)
-            elif(br==1):
                 devices[idx].setHash(c.firstChild.data)
-            elif(br==2):
+            elif(br==1):
                 devices[idx].setDeviceType(c.firstChild.data)
-            elif(br==3):
+            elif(br==2):
                 devices[idx].setValue(c.firstChild.data)
             else:
                 devices[idx].setTimeStamp(c.firstChild.data)
@@ -190,52 +189,79 @@ def ReadStateChanges():
         print(devices[i].toString())
     return
 
+def metoda():
+    #while True:
+        #sleep(2)
+    print("lalalal")    
+
 def ClearReceivedChanges():
     myfile = open("receivedchanges.xml", "w")
     myfile.write("")
 
 def PassStateChangesToAMS(timeScale):
-    while(1):
+    print('usao')
+    while True:
+        print('time ',60*5*timeScale)
         time.sleep(60*5*timeScale)
         TCP_IP = '127.0.0.1'
         TCP_PORT = 5017
         MESSAGE = pickle.dumps(receivequeue)
-        #trebalo bi ovdje
+        print("SENDING TO AMS:",MESSAGE)
+        #trebalo bi ovde
         receivequeue.clear()
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((TCP_IP, TCP_PORT))
         s.send(MESSAGE)
-        response=s.recv(1024)
-        print(response.decode())
-        if(response.decode()=='ok'):
-            print("Uspjesno poslati podaci ka AMS")
-            ClearReceivedChanges()
-        else:
-            print("Neuspjesno slanje ka AMS")
-            ReadStateChanges()
-        s.close()
-
-    return
+       # response=s.recv(8192)
+       # print('response from AMS:',response)
+       # print(response.decode())
+        # if(response.decode()=='ok'):
+        #     print("Uspesno poslati podaci ka AMS")
+        #     # ClearReceivedChanges()
+        # else:
+        #     print("Neuspesno slanje ka AMS")
+        #     # ReadStateChanges()
 
 def LoadTime():
     with open('./time_config.xml') as fd:
         doc = xmltodict.parse(fd.read())
     return doc['timescale']['value']
 
-
+def jedan():
+    while True:
+        sleep(2)
+        print('jedan')
+def dva():
+    while True:
+        sleep(2)
+        print('dva')
+def tri():
+    while True:
+        sleep(2)
+        print('tri')
 
 
 if __name__=="__main__":
-    input('started')
+    # jedanT=Thread(target=jedan)
+    # dvaT=Thread(target=dva)
+    # triT=Thread(target=tri)
+    # jedanT.start()
+    # dvaT.start()
+    # triT.start()
     timeScale=float(LoadTime())
     ReadDevicesFromXml()
-    recieveProcess=Thread(target=ReceiveStateChanges,args=())
-    sendProces=Thread(target=SaveStateChanges,args=())
-    saveProcess=Thread(target=PassStateChangesToAMS,args=[timeScale])
-    registerProcess = Thread(target=RegisterDevice,args=())
-    recieveProcess.start()
+    # ReadStateChanges()
+    recieveProcess=Thread(target=ReceiveStateChanges)
+    metodNit=Thread(target=metoda)
+    saveProcess=Thread(target=SaveStateChanges)
+    sendProces=Thread(target=PassStateChangesToAMS)
+    registerProcess = Thread(target=RegisterDevice)
+    metodNit.start()
+    sleep(2)
     sendProces.start()
-    saveProcess.start()
+    sleep(2)
+    recieveProcess.start()
+    #saveProcess.start()
     registerProcess.start()
-    WriteDeviceToXml()
+    #WriteDeviceToXml()
     input("Program working...")
