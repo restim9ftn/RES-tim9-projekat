@@ -151,7 +151,10 @@ def ReceiveStateChanges():
 
 def SaveStateChanges():
     print('usao u save')
+    # try:
     data = ET.Element('receivedchanges')
+    #except Exception as e:
+     #   print(e)
     input("received val")
     for d in receivequeue:
         items = ET.SubElement(data, 'device')
