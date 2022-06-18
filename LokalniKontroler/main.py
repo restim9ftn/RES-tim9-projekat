@@ -144,8 +144,7 @@ def ReceiveStateChanges():
                     print("ok")
                     # if(SaveStateChanges()):
                     #     print('ok')
-                    print("ok")
-                    s.send('ok'.encode())    
+                    #s.send('ok'.encode())    
                 else:
                     s.close()
                     read_list.remove(s)
