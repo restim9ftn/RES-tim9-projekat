@@ -5,6 +5,7 @@ import time
 from hashlib import sha256
 from random import randint
 from time import sleep
+from datetime import date,datetime
 
 def Menu(nizuredjaja,tipuredjaja):
    
@@ -24,8 +25,9 @@ def Menu(nizuredjaja,tipuredjaja):
         elif(option2==1):
             tip='1'
         val=int(input('Unesite vrednost:'))
-        timestamp=time.time()
-        hash=sha256((input("Unesite naziv").encode())).hexdigest()
+        tdy=date.today().strftime("%d/%m/%Y")
+        timestamp=datetime.timestamp(datetime.strptime(tdy,"%d/%m/%Y"))
+        hash=sha256((input("Unesite naziv: ").encode())).hexdigest()
         mode=input("Unesite 'ams' ako zelite da direktno saljete ams procesu, ili controller ako zelite kontroleru. ")
         if mode!='ams':
             subprocess.call(f'start python LokalniKontroler/main.py', shell=True)

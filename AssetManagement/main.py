@@ -9,12 +9,15 @@ import xmltodict
 import time
 from datetime import datetime
 from LocalDevice import LocalDevice 
+
 receivequeue=Queue()
+
 connector=mysql.connector.connect(
         host="localhost",
         user="root",
-        passwd="root")
-#region prihvatanje apdejta deviceova
+        passwd="andrija")
+
+#prihvatanje apdejta deviceova
 def ListenForMainControlerNotifications():
     HOST=''
     PORT=5017
@@ -32,7 +35,7 @@ def ListenForMainControlerNotifications():
                     client_socket, address = ss.accept()
                     read_list.append(client_socket)
                 else:
-                    data = s.recv(1024)
+                    data = s.recv(8192)
                     
                     if data:
                         device=pickle.loads(data)
@@ -45,25 +48,28 @@ def ListenForMainControlerNotifications():
                                     val=(i.getHash(),i.getTimeStamp(),str(i.getDeviceType()),i.getValue())
                                     cursor.execute(query,val)
                                     connector.commit()
+                                    print("Dodat uredjaj")
                         except Exception as e:
                             print(e)
                         # try:
                         #     s.send('ok'.encode())
                         # except Exception as e:
                         #     print(e)
-                        # print('sent ok')
-                        
+                        # print('sent ok')                       
                     else:
                         print('closed')
                         s.close()
                         read_list.remove(s)
         except:
             print(readable)
-#endregion
+
+
 def SaveChangesToDb():
     while(1):
         entity = receivequeue.get()
         print(entity)
+
+
 def RetrieveAll():
         #today = datetime.now()
         #date = f"{today.month}/{today.year}";
@@ -74,15 +80,20 @@ def RetrieveAll():
             print('Values:\n')
             for u in cursor:
                 print(f"Hash:{u[0]}")
-def RetrieveAllByTime(fromDate,toDate,hash):
+
+
+def RetrieveAllByTime():
+    fromDate=input('od: ')
+    toDate=input('do: ')
+    hash=input('hash: ')
     #today = datetime.now()
     #date = f"{today.month}/{today.year}";
     string = "01/01/2020"
     # pom=ciso8601.parse_datetime(string)
     # print(time.mktime(pom.timetuple()))
-    print(datetime(fromDate.split('/')[2],fromDate.split('/')[1],fromDate.split('/')[0],0,0).timestamp())
-    fromTS=datetime(fromDate.split('/')[2],fromDate.split('/')[0],fromDate.split('/')[1],0,0).timestamp()
-    toTS=datetime(toDate.split('/')[2],toDate.split('/')[0],toDate.split('/')[1],0,0).timestamp()
+    #print(datetime(fromDate.split('/')[2],fromDate.split('/')[1],fromDate.split('/')[0],0,0).timestamp())
+    fromTS=datetime.timestamp(datetime.strptime(fromDate,"%d/%m/%Y"))
+    toTS=datetime.timestamp(datetime.strptime(toDate,"%d/%m/%Y"))
     print(fromTS)
     print(toTS)
     if connector.is_connected():
@@ -92,7 +103,31 @@ def RetrieveAllByTime(fromDate,toDate,hash):
         print('Values:\n')
         for u in cursor:
             print(f"Hash:{u[0]}, Timestamp:{u[1]}, Type:{u[2]}, Value: {u[3]}")
-#region menu
+
+
+def LoadRadniSati():
+    with open('./radnisaticonfig.xml') as fd:
+        doc = xmltodict.parse(fd.read())
+    return doc['time']['value']
+
+
+def BrojRadnihSati():
+    fromDate=input('od: ')
+    toDate=input('do: ')
+    hash=input('hash: ')
+    maksSati=LoadRadniSati()
+    fromTS=datetime.timestamp(datetime.strptime(fromDate,"%d/%m/%Y"))
+    toTS=datetime.timestamp(datetime.strptime(toDate,"%d/%m/%Y"))
+    if connector.is_connected():
+        query=f"select min(timestamp),max(timestamp) from res1.states where timestamp<={toTS} and timestamp>={fromTS} and hash='{hash}'" 
+        cursor = connector.cursor()
+        cursor.execute(query)
+        print('Values:\n')
+        for u in cursor:
+            print(f"min:{u[0]}, max:{u[1]} ")
+            print(u[1]-u[0])
+    
+#Menu
 def Menu():
     while(True):
         print("1. Ispis uredjaja.")
@@ -101,21 +136,20 @@ def Menu():
         option=input()
         if(option=="1"):
             RetrieveAll()
+        elif option=="2":
+            BrojRadnihSati()
         elif option=="3":
-            f=input('od: ')
-            to=input('do: ')
-            hash=input('hash: ')
-            RetrieveAllByTime(f,to,hash)
+            RetrieveAllByTime()
     return
-#endregion
+
 
 def LoadTimeScale():
-    with open('./time_config.xml') as fd:
+    with open('C:/Users/User/Desktop/RESSS/RES/time_config.xml') as fd:
         doc = xmltodict.parse(fd.read())
     return doc['timescale']['value']
 
 def LoadTimeConfig():
-    with open('./radnisaticonfig.xml') as fd:
+    with open('C:/Users/User/Desktop/RESSS/RES/radnisaticonfig.xml') as fd:
         doc = xmltodict.parse(fd.read())
     return doc['timescale']['value']
 
@@ -123,7 +157,8 @@ if __name__ == "__main__":
     connector=mysql.connector.connect(
         host="localhost",
         user="root",
-        passwd="root")
+        passwd="andrija")
+    
     scaleTime=float(LoadTimeScale())
     timeConfig=float(LoadTimeScale())
 
