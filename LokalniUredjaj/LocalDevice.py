@@ -11,11 +11,13 @@ class LocalDevice:
     deviceType = DeviceType.Digital
     value=0
     timeStamp=0
-    def __init__(self,hash,type,value,timeStamp):
+    def __init__(self,type,value,timeStamp,hash):
+ 	self.deviceType=type
+	self.value=value
+	self.timeStamp=timeStamp
         self.hash=hash
-        self.deviceType=type
-        self.value=value
-        self.timeStamp=timeStamp
+        
+      
         
     def getHash(self):
         return hash
@@ -42,5 +44,6 @@ class LocalDevice:
             return "DIGITAL"
         else:   
             return "ANALOG"
+
     def toString(self):
         return f"Tip uredjaja: {self.getTypeString()}, Vrednost: {self.getValue()}, Poslednja izmena: {self.getTimeStamp()}"

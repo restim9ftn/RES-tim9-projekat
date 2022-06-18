@@ -12,13 +12,15 @@ from time import sleep
 from dicttoxml import dicttoxml
 import xmltodict
 import select
+import socket
 import sys
+
 terminate=False
 
 
-def ReportStateChanges(localDevice): #menjanje stanja
+def ReportStateChanges(localDevice,port): #funkcija promene
     TCP_IP = '127.0.0.1'
-    TCP_PORT = 5015
+    TCP_PORT = port #5015
     MESSAGE = pickle.dumps(localDevice)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((TCP_IP, TCP_PORT))
@@ -140,10 +142,8 @@ def LoadTimeScale():
     return doc['timescale']['value']
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':#parametri za uredjaj od monitoringa -> type,value,timeStamp,hash
     #ovde pokupimo patrametre iz aplikacije koja startuje
-    #users = sys.argv[2:len(sys.argv)]
-    #username=users[int(sys.argv[1])]
     #localDevice = LocalDevice(DeviceType(int('0')),int('1'),float('1.345'),'wsedrftghasdfg')
     dev_type = sys.argv[1]
     dev_value = sys.argv[2]
