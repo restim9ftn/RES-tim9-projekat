@@ -206,7 +206,7 @@ def ReadStateChanges():
 def metoda():
     #while True:
         #sleep(2)
-    print("lalalal")    
+    print("radi")    
 
 def ClearReceivedChanges():
     myfile = open("receivedchanges.xml", "w")
@@ -241,18 +241,7 @@ def LoadTime():
         doc = xmltodict.parse(fd.read())
     return doc['timescale']['value']
 
-def jedan():
-    while True:
-        sleep(2)
-        print('jedan')
-def dva():
-    while True:
-        sleep(2)
-        print('dva')
-def tri():
-    while True:
-        sleep(2)
-        print('tri')
+
 
 
 if __name__=="__main__":
