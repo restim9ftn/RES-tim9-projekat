@@ -19,9 +19,40 @@ receivequeue=[]
 devices=[]
 timeScale=0.0
 
+def SaveStateChanges():
+    print('uso u save')
+   # try:
+    data = ET.Element('./receivedchanges')
+    #except Exception as e:
+     #   print(e)
+    input("received val")
+    for d in receivequeue:
+        items = ET.SubElement(data, 'device')
+        item2 = ET.SubElement(items, 'hash')
+        item3 = ET.SubElement(items, 'deviceType')
+        item4 = ET.SubElement(items, 'timeStamp')
+        item5 = ET.SubElement(items, 'value')
+        item2.text = str(d.getHash())
+        item3.text=str(d.getTypeString())
+        item4.text=str(d.getTimeStamp())
+        item5.text=str(d.getValue())
+    
+    mydata = ET.tostring(data)
+    print("mydata",mydata)
+    print("str(mydata)",str(mydata))
+    #sklanjanje b' na pocetku i ' na kraju stringa
+    mydata2 =str(mydata) 
+    mydata2 = mydata2[2:len(mydata2)-1]
+    print("mydata2",mydata2)
+    myfile = open("receivedchanges.xml", "w")
+    myfile.write(mydata2)
+    input("uspeo")
+    return
+
+#upisivanje devices u xml
 def WriteDeviceToXml():
     global devices
-    data = ET.Element('devices')
+    data = ET.Element('./devices')
     #print('dev len:',len(devices))
     for d in devices:
         #print(f"d: {0}",d.toString())
@@ -34,7 +65,7 @@ def WriteDeviceToXml():
         item3.text=str(d.getTypeString())
         item4.text=str(d.getTimeStamp())
         item5.text=str(d.getValue())
-    ####
+    
     mydata = ET.tostring(data)
     #print("mydata",mydata)
     #print("str(mydata)",str(mydata))
@@ -44,11 +75,13 @@ def WriteDeviceToXml():
     #print("mydata2",mydata2)
     myfile = open("devices.xml", "w")
     myfile.write(mydata2)
+    
     return
 
+#citanje devices iz xml
 def ReadDevicesFromXml():
     global devices
-    mydoc = minidom.parse('devices.xml')
+    mydoc = minidom.parse('./devices.xml')
     devs = mydoc.getElementsByTagName('device')
     idx=0
     for i in range(0,len(devs)):
@@ -67,10 +100,11 @@ def ReadDevicesFromXml():
                 devices[idx].setValue(c.firstChild.data)
             br+=1
         idx+=1
-    #for i in range(0,len(devices)):
-    #print('U funkciji ReadDevicesFromXml citanje ranije reg. devices',devices[i].toString())
+    # for i in range(0,len(devices)):
+    #     print('U funkciji ReadDevicesFromXml citanje ranije reg. devices',devices[i].toString())
     return
 
+#funkcija koja dok program radi dodaje device u niz i ako ne postoji dodaje u xml
 def AddDevice(device):
     global devices
     ind=False
@@ -87,6 +121,7 @@ def AddDevice(device):
         WriteDeviceToXml()
         return True
 
+#slusamo nove registracije uredjaja na portu 5016
 def RegisterDevice():
     HOST=''
     PORT=5016
@@ -113,12 +148,14 @@ def RegisterDevice():
                             s.send('ok'.encode())
                         else:
                             s.send('Device vec registrovan.'.encode())
+
                     else:
                         s.close()
                         read_list.remove(s)
         except:
             print(readable)
 
+#thread koji slusa na 5015 nove izmene od device
 def ReceiveStateChanges():
     global receivequeue 
     HOST=''
@@ -149,38 +186,10 @@ def ReceiveStateChanges():
                     s.close()
                     read_list.remove(s)
 
-def SaveStateChanges():
-    print('usao u save')
-    # try:
-    data = ET.Element('receivedchanges')
-    #except Exception as e:
-     #   print(e)
-    input("received val")
-    for d in receivequeue:
-        items = ET.SubElement(data, 'device')
-        item2 = ET.SubElement(items, 'hash')
-        item3 = ET.SubElement(items, 'deviceType')
-        item4 = ET.SubElement(items, 'timStamp')
-        item5 = ET.SubElement(items, 'value')
-        item2.text = str(d.getHash())
-        item3.text=str(d.getTypeString())
-        item4.text=str(d.getTimeStamp())
-        item5.text=str(d.getValue())
-    
-    mydata = ET.tostring(data)
-    print("mydata",mydata)
-    print("str(mydata)",str(mydata))
-    #sklanjanje b' na pocetku i ' na kraju stringa
-    mydata2 =str(mydata) 
-    mydata2 = mydata2[2:len(mydata2)-1]
-    print("mydata2",mydata2)
-    myfile = open("receivedchanges.xml", "w")
-    myfile.write(mydata2)
-    input("uspeo")
-    return
-        
+#cuvanje dospelih izmena u xml
+#procitaj izmene stanja iz xml-a
 def ReadStateChanges():
-    mydoc = minidom.parse('receivedchanges.xml')
+    mydoc = minidom.parse('C:/Users/User/Desktop/FINALNORES/Res/receivedchanges.xml')
     devs = mydoc.getElementsByTagName('device')
     idx=0
     for i in range(0,len(devs)):
@@ -203,16 +212,18 @@ def ReadStateChanges():
         print(devices[i].toString())
     return
 
+#brisanje xml od dospelih izmena
+def ClearReceivedChanges():
+    myfile = open("C:/Users/User/Desktop/FINALNORES/Res/receivedchanges.xml", "w")
+    myfile.write("")
+
+#ProsledjivanjePodatakaKaAMS
 def metoda():
     #while True:
         #sleep(2)
-    print("radi")    
+    print("lalalal")
 
-def ClearReceivedChanges():
-    myfile = open("receivedchanges.xml", "w")
-    myfile.write("")
-
-def PassStateChangesToAMS(timeScale):
+def PassStateChangesToAMS():
     print('usao')
     while True:
         print('time ',60*5*timeScale)
@@ -226,24 +237,37 @@ def PassStateChangesToAMS(timeScale):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((TCP_IP, TCP_PORT))
         s.send(MESSAGE)
-       # response=s.recv(8192)
-       # print('response from AMS:',response)
-       # print(response.decode())
-        # if(response.decode()=='ok'):
+        #response=s.recv(8192)
+        #print('response from AMS:',response)
+        #print(response.decode())
+        #if(response.decode()=='ok'):
         #     print("Uspesno poslati podaci ka AMS")
-        #     # ClearReceivedChanges()
-        # else:
-        #     print("Neuspesno slanje ka AMS")
-        #     # ReadStateChanges()
+        #     ClearReceivedChanges()
+        #else:
+        #      print("Neuspesno slanje ka AMS")
+        #      ReadStateChanges()
 
+#Load timescale
 def LoadTime():
-    with open('./time_config.xml') as fd:
+    with open('C:/Users/User/Desktop/FINALNORES/Res/time_config.xml') as fd:
         doc = xmltodict.parse(fd.read())
     return doc['timescale']['value']
+####
+#probeee
+def jedan():
+    while True:
+        sleep(2)
+        print('jedan')
+def dva():
+    while True:
+        sleep(2)
+        print('dva')
+def tri():
+    while True:
+        sleep(2)
+        print('tri')
 
-
-
-
+#Main
 if __name__=="__main__":
     # jedanT=Thread(target=jedan)
     # dvaT=Thread(target=dva)
@@ -253,7 +277,7 @@ if __name__=="__main__":
     # triT.start()
     timeScale=float(LoadTime())
     ReadDevicesFromXml()
-    # ReadStateChanges()
+    #ReadStateChanges()
     recieveProcess=Thread(target=ReceiveStateChanges)
     metodNit=Thread(target=metoda)
     saveProcess=Thread(target=SaveStateChanges)

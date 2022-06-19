@@ -144,12 +144,12 @@ def Menu():
 
 
 def LoadTimeScale():
-    with open('C:/Users/User/Desktop/RESSS/RES/time_config.xml') as fd:
+    with open('C:/Users/User/Desktop/FINALNORES/Res/time_config.xml') as fd:
         doc = xmltodict.parse(fd.read())
     return doc['timescale']['value']
 
 def LoadTimeConfig():
-    with open('C:/Users/User/Desktop/RESSS/RES/radnisaticonfig.xml') as fd:
+    with open('C:/Users/User/Desktop/FINALNORES/Res/radnisaticonfig.xml') as fd:
         doc = xmltodict.parse(fd.read())
     return doc['timescale']['value']
 

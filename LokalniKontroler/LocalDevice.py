@@ -17,6 +17,7 @@ class LocalDevice:
         self.timeStamp=timeStamp
         self.hash=hash
 
+
         
     def getHash(self):
         return self.hash
